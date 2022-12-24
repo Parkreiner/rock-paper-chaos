@@ -1,4 +1,6 @@
-/** Rock, Paper, or Scissors, each with a numerical value. */
+/**
+ * Rock, Paper, or Scissors, each with a numerical value.
+ */
 export const elements = {
   r: 0,
   p: 1,

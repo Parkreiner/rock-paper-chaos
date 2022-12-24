@@ -1,3 +1,12 @@
+/**
+ * @file Defines and exports class definitions for the deck, hand, and discard
+ * piles.
+ *
+ * @todo Eventually rewrite these. I think this will be less of a priority,
+ * because I think these three have all the obvious functionality that could be
+ * needed.
+ */
+
 import { Card } from "./Card";
 import { Discovery } from "../clientJsonTypes";
 import { JsonValue, Stack } from "../sharedTypes";
@@ -127,12 +136,16 @@ export class Hand extends CardStack {
 }
 
 export class Deck extends CardStack {
-  drawN(count: number): Card[] {
+  drawN(drawCount: number): Card[] {
     const drawn: Card[] = [];
-    for (let i = count; this.cards.length > 0 && i > 0; i--) {
+    for (let i = drawCount; this.cards.length > 0 && i > 0; i--) {
       drawn.push(this.cards.pop() as Card);
     }
 
     return drawn;
+  }
+
+  draw(): Card | null {
+    return this.drawN(1)[0] ?? null;
   }
 }

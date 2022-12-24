@@ -1,9 +1,16 @@
+/**
+ * @file Represents a player, along with all their cards.
+ */
+
 import { JsonValue } from "../sharedTypes";
 import { Card } from "./Card";
 import { DiscardPile, Hand, Deck } from "./CardStacks";
 import { Discovery } from "../clientJsonTypes";
 
+/** Indicates where a discovery can come from. */
 type DiscoverySource = "deck" | "discard";
+
+/** Info about a discovery */
 type DiscoveryInfo =
   | { source: null; cards: null }
   | { source: DiscoverySource; cards: Discovery };
@@ -26,12 +33,8 @@ export class Player {
     this.#deck = new Deck([...cards]);
   }
 
-  get selectedCardInfo() {
-    if (this.#selectedCard === null) {
-      return { ready: false, card: null } as const;
-    }
-
-    return { ready: true, card: this.#selectedCard } as const;
+  get selectedCard(): Card | null {
+    return this.#selectedCard;
   }
 
   get outOfCards() {
@@ -134,7 +137,26 @@ export class Player {
     this.#discovery = { source: sourceName, cards: source.discover() };
   }
 
-  undiscover(): void {
+  resolveDiscoveryChoice(cardId: number): void {
+    if (this.#discovery.source === null) {
+      return;
+    }
+
+    if (!this.#discovery.cards.includes(cardId)) {
+      throw new Error("Trying to discover card from wrong source.");
+    }
+
+    const sourceName = this.#discovery.source;
+    const source = sourceName === "deck" ? this.#deck : this.#discardPile;
+
+    const card = source.removeById(cardId);
+    if (!card) {
+      throw new Error(
+        `Card with ID ${cardId} does not exist in source ${sourceName}`
+      );
+    }
+
+    this.#hand.add(card);
     this.#discovery = { source: null, cards: null };
   }
 

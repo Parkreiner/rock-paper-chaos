@@ -1,3 +1,8 @@
+/**
+ * @files Defines all the basic methods for running a new game instance.
+ * Ideally, the app will get to a point where multiple games are able to run
+ * concurrently (assuming there are enough players).
+ */
 import { RoundUpdate } from "../clientJsonTypes";
 import { Card } from "./Card";
 import { elements, JsonValue, RpsElement } from "../sharedTypes";
@@ -9,6 +14,12 @@ type RpsWinner = "p1" | "p2" | "draw";
 export class Game {
   #round = 1;
   #gameOver = false;
+
+  /**
+   * Note: these callbacks are designed to represent card effects and are set
+   * to be run at the start of a phase. May or may not separate stacks for
+   * holding cleanup functions?
+   */
   #phaseCallbacks: PhaseCallbacks = {
     upkeep: [],
     draw: [],
@@ -30,6 +41,7 @@ export class Game {
     return this.#gameOver;
   }
 
+  /** Fully resets the game. */
   reset(): void {
     this.#round = 1;
     this.#player1.reset();
@@ -67,8 +79,8 @@ export class Game {
 
   #selectionPhase() {
     // Complicated stuff; this might not have a void a return type, depending on
-    // how it hooks up to manageGameState. The end of the selection phase will
-    // have to be where I load up the callbacks for each card
+    // how it hooks up to manageGameState. I'm thinking that the end of the
+    // selection phase is when all the card effects should be loaded up.
   }
 
   #preCombatPhase(): void {
@@ -76,17 +88,18 @@ export class Game {
     return;
   }
 
+  /** @todo Finish this method definition */
   #combatPhase(): void {
-    const p1Select = this.#player1.selectedCardInfo;
-    const p2Select = this.#player2.selectedCardInfo;
+    const p1Select = this.#player1.selectedCard;
+    const p2Select = this.#player2.selectedCard;
 
-    if (!p1Select.ready || !p2Select.ready) {
+    if (p1Select === null || p2Select === null) {
       throw new Error(`Reached combat phase before both players were ready`);
     }
 
     const baseScore = this.#calculateRpsWinner(
-      p1Select.card.element,
-      p2Select.card.element
+      p1Select.element,
+      p2Select.element
     );
   }
 
@@ -105,6 +118,15 @@ export class Game {
     return p1Num > p2Num && p1Num !== 2 && p2Num !== 0 ? "p1" : "p2";
   }
 
+  /**
+   * With how I'm thinking about the game right now, the vast majority of it is
+   * synchronous. The only exception is the selection phase, which requires that
+   * the game be paused while both players select a card to play.
+   *
+   * With a generator, I think it could be possible to yield a round update to
+   * pause the method, and then resume the function only once both players have
+   * a selection.
+   */
   *gameStateGenerator() {
     while (!this.#gameOver) {
       for (const phase of phases) {
@@ -152,6 +174,9 @@ export class Game {
     return this.toRoundUpdateJson();
   }
 
+  // I don't really know what I'm doing with this; I think the idea was to have
+  // a separate function for receiving messages/data from both clients,
+  // basically having it act as a middleman
   processMessages(): void {}
 
   // Not sure if this class will need multiple types of JSON; if not, this name
@@ -164,9 +189,4 @@ export class Game {
       p2: this.#player2.toJson(),
     } satisfies JsonValue;
   }
-}
-
-function* testGen() {
-  const temp: "AssignValue" = yield "YieldValue" as const;
-  return "ReturnValue" as const;
 }
